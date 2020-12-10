@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>teaching_interface_ros</name>
+  <version>0.0.0</version>
+  <description>The teaching interface package</description>
+
+  <!-- Maintainer -->
+  <maintainer email="ggor290@aucklanduni.ac.nz">Gal Gorjup</maintainer>
+
+  <!-- License -->
+  <license>TBD</license>
+
+  <!-- Authors -->
+  <author email="ggor290@aucklanduni.ac.nz">Gal Gorjup</author>
+
+  <!-- Dependencies -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>rospy</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+
+  <!-- Export -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+  </export>
+
+</package>
