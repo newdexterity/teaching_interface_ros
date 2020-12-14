@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+
+<launch>
+
+  <!-- Arguments -->
+  <arg name="arduino_ip" default="192.168.1.3"/>
+
+  <!-- Launch teaching interface client -->
+  <node name="teaching_interface_client" pkg="teaching_interface_ros" type="teaching_interface_client" output="screen" >
+    <param name="arduino_ip" value="$(arg arduino_ip)" />
+  </node>
+  
+</launch>

@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+
+import requests
+import rospy
+from teaching_interface_ros.msg import InterfaceData
+
+
+class Node(object):
+
+    def __init__(self):
+
+        # Variables
+        self.var = None
+
+        # Parameters
+        self.arduino_ip = rospy.get_param('~arduino_ip')
+
+        # Initialise interface data publisher
+        self.data_pub = rospy.Publisher('teaching_interface_data', InterfaceData, queue_size=1)
+
+    def run(self):
+        while not rospy.is_shutdown():
+            # Request data from arduino
+            r = requests.get('http://' + self.arduino_ip)
+            data = r.json()
+
+            # Construct message
+            msg = InterfaceData()
+            msg.x_button = not data['x']
+            msg.y_button = not data['y']
+            msg.z_button = not data['z']
+            msg.roll_button = not data['roll']
+            msg.pitch_button = not data['pitch']
+            msg.yaw_button = not data['yaw']
+            msg.waypoint_button = not data['wp']
+            msg.conf_button = not data['conf']
+            if not data['dir']:
+                msg.direction = 1
+            else:
+                msg.direction = -1
+            if not data['ref']:
+                msg.reference = 'base'
+            else:
+                msg.reference = 'ee'
+            msg.dial = float(data['dial']) / 1023.0
+            msg.fsr_1 = float(data['fsr1']) / 1023.0
+            msg.fsr_2 = float(data['fsr2']) / 1023.0
+
+            # Publish message
+            self.data_pub.publish(msg)
+
+
+if __name__ == '__main__':
+    rospy.init_node('teaching_interface_client', anonymous=False)
+    n = Node()
+    n.run()

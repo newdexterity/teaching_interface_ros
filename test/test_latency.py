@@ -31,5 +31,5 @@ def test_latency(ip_address, cycles):
 
 
 if __name__ == '__main__':
-    avg = test_latency(ip_address='192.168.1.18', cycles=20)
+    avg = test_latency(ip_address='192.168.1.3', cycles=20)
     print("Average latency of teaching interface: {} s /  {} Hz.".format(avg, 1.0 / avg))
