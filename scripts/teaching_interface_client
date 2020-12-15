@@ -16,7 +16,7 @@ class Node(object):
         self.arduino_ip = rospy.get_param('~arduino_ip')
 
         # Initialise interface data publisher
-        self.data_pub = rospy.Publisher('teaching_interface_data', InterfaceData, queue_size=1)
+        self.data_pub = rospy.Publisher('~teaching_interface_data', InterfaceData, queue_size=1)
 
     def run(self):
         while not rospy.is_shutdown():
@@ -39,9 +39,9 @@ class Node(object):
             else:
                 msg.direction = -1
             if not data['ref']:
-                msg.reference = 'base'
+                msg.reference = 'base_link'
             else:
-                msg.reference = 'ee'
+                msg.reference = 'ee_link'
             msg.dial = float(data['dial']) / 1023.0
             msg.fsr_1 = float(data['fsr1']) / 1023.0
             msg.fsr_2 = float(data['fsr2']) / 1023.0

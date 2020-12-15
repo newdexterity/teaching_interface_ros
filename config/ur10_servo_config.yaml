@@ -8,7 +8,7 @@ command_in_type: "unitless" # "unitless"> in the range [-1:1], as if from joysti
 scale:
   # Scale parameters are only used if command_in_type=="unitless"
   linear:  0.1  # Max linear velocity. Meters per publish_period. Unit is [m/s]. Only used for Cartesian commands.
-  rotational:  0.05 # Max angular velocity. Rads per publish_period. Unit is [rad/s]. Only used for Cartesian commands.
+  rotational:  0.2 # Max angular velocity. Rads per publish_period. Unit is [rad/s]. Only used for Cartesian commands.
   # Max joint angular/linear velocity. Rads or Meters per publish period. Only used for joint commands on joint_command_in_topic.
   joint: 0.01
 low_pass_filter_coeff: 8.  # Larger --> trust the filtered data more, trust the measurements less.
@@ -36,7 +36,7 @@ ee_frame_name: ee_link  # The name of the end effector link, used to return the 
 robot_link_command_frame:  base_link  # commands must be given in the frame of a robot link. Usually either the base or end effector
 
 ## Stopping behaviour
-incoming_command_timeout:  0.1  # Stop servoing if X seconds elapse without a new command
+incoming_command_timeout:  0.2  # Stop servoing if X seconds elapse without a new command
 # If 0, republish commands forever even if the robot is stationary. Otherwise, specify num. to publish.
 # Important because ROS may drop some messages and we need the robot to halt reliably.
 num_outgoing_halt_msgs_to_publish: 4
