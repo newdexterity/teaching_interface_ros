@@ -20,7 +20,7 @@ def test_latency(ip_address, cycles):
     for i in range(cycles):
         time_start = time.time()
         r = requests.get('http://' + ip_address)
-        data = r.json()
+        r.json()
         time_end = time.time()
         latency_arr.append(time_end - time_start)
 

@@ -1,0 +1,34 @@
+<?xml version="1.0" ?>
+
+<launch>
+
+  <!-- Arguments -->
+  <arg name="arduino_ip" default="192.168.1.3"/>
+
+  <!-- Launch teaching interface client -->
+  <!-- <node name="teaching_interface_client" pkg="teaching_interface_ros" type="teaching_interface_client" output="screen" >
+    <param name="arduino_ip" value="$(arg arduino_ip)" />
+  </node> -->
+
+  <!-- Launch UR10 Driver -->
+  <include file="$(find ur_modern_driver)/launch/ur10_ros_control.launch" >
+    <arg name="robot_ip" value="192.168.1.32" />
+    <arg name="controllers" default="joint_state_controller force_torque_sensor_controller joint_group_vel_controller"/>
+    <arg name="stopped_controllers" default="pos_based_pos_traj_controller vel_based_pos_traj_controller"/>
+  </include>
+
+  <!-- Launch UR10 MoveIt -->
+  <include file="$(find ur10limited_moveit_config)/launch/move_group.launch">
+    <arg name="publish_monitored_planning_scene" value="true" />
+  </include>
+  <!-- <include file="$(find ur10limited_moveit_config)/launch/moveit_rviz.launch" >
+    <arg name="rviz_config" value="$(find ur10limited_moveit_config)/launch/moveit.rviz" />
+  </include> -->
+
+  <!-- Launch base frame servo node -->
+  <node name="servo_server" pkg="moveit_servo" type="servo_server" output="screen" >
+    <param name="parameter_ns" type="string" value="optional_parameter_namespace" />
+    <rosparam ns="optional_parameter_namespace" command="load" file="$(find teaching_interface_ros)/config/ur10_servo_config.yaml" />
+  </node>
+  
+</launch>
