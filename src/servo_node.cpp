@@ -2,7 +2,7 @@
 #include <moveit_servo/status_codes.h>
 #include <moveit_servo/make_shared_from_pool.h>
 #include <std_msgs/Int8.h>
-#include <teaching_interface_ros/InterfaceData.h>
+#include <teaching_interface_ros/TeachingCommand.h>
 
 static const std::string LOGNAME = "servo_node";
 
@@ -38,13 +38,13 @@ class InterfaceLink
 public:
   InterfaceLink(ros::NodeHandle& nh, moveit_servo::Servo& servo) : servo_(servo)
   {
-    sub_ = nh.subscribe("teaching_interface_data", 1, &InterfaceLink::dataCB, this);
+    sub_ = nh.subscribe("teaching_command", 1, &InterfaceLink::dataCB, this);
     twist_stamped_pub_ = nh.advertise<geometry_msgs::TwistStamped>(servo_.getParameters().cartesian_command_in_topic, 1);
     reference_ = servo_.getParameters().robot_link_command_frame;
   }
 
 private:
-  void dataCB(const teaching_interface_ros::InterfaceData& msg)
+  void dataCB(const teaching_interface_ros::TeachingCommand& msg)
   {
     // Change reference frame if required
     if (msg.reference != reference_) {
@@ -59,16 +59,10 @@ private:
     // Make a Cartesian velocity message
     auto twist_msg = moveit::util::make_shared_from_pool<geometry_msgs::TwistStamped>();
     twist_msg->header.stamp = ros::Time::now();
-    // twist_msg->header.frame_id = "base_link";
     twist_msg->header.frame_id = reference_;
 
     // Fill in the velocity commands
-    twist_msg->twist.linear.x = msg.dial * msg.x_button * msg.direction;
-    twist_msg->twist.linear.y = msg.dial * msg.y_button * msg.direction;
-    twist_msg->twist.linear.z = msg.dial * msg.z_button * msg.direction;
-    twist_msg->twist.angular.x = msg.dial * msg.roll_button * msg.direction;
-    twist_msg->twist.angular.y = msg.dial * msg.pitch_button * msg.direction;
-    twist_msg->twist.angular.z = msg.dial * msg.yaw_button * msg.direction;
+    twist_msg->twist = msg.twist;
 
     // Send the message
     twist_stamped_pub_.publish(twist_msg);

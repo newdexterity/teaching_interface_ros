@@ -12,6 +12,8 @@ set(SERVO_LIB_NAME moveit_servo_cpp_api)
 find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
+  sensor_msgs
+  geometry_msgs
   tf2
   tf2_ros
   message_generation
@@ -20,12 +22,13 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
-  InterfaceData.msg
+  TeachingCommand.msg
 )
 
 generate_messages(
   DEPENDENCIES
   std_msgs
+  geometry_msgs
 )
 
 catkin_package(

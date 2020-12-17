@@ -29,7 +29,7 @@
   <node name="servo_node" pkg="teaching_interface_ros" type="servo_node" output="screen" >
     <param name="parameter_ns" type="string" value="optional_parameter_namespace" />
     <rosparam ns="optional_parameter_namespace" command="load" file="$(find teaching_interface_ros)/config/ur10_servo_config.yaml" />
-    <remap from="/servo_node/teaching_interface_data" to="/teaching_interface_client/teaching_interface_data" />
+    <remap from="/servo_node/teaching_command" to="/teaching_interface_client/teaching_command" />
   </node>
   
 </launch>

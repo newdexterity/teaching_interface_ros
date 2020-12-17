@@ -7,14 +7,14 @@ use_gazebo: false
 command_in_type: "unitless" # "unitless"> in the range [-1:1], as if from joystick. "speed_units"> cmds are in m/s and rad/s
 scale:
   # Scale parameters are only used if command_in_type=="unitless"
-  linear:  0.1  # Max linear velocity. Meters per publish_period. Unit is [m/s]. Only used for Cartesian commands.
-  rotational:  0.2 # Max angular velocity. Rads per publish_period. Unit is [rad/s]. Only used for Cartesian commands.
+  linear:  0.05  # Max linear velocity. Meters per publish_period. Unit is [m/s]. Only used for Cartesian commands.
+  rotational:  0.1 # Max angular velocity. Rads per publish_period. Unit is [rad/s]. Only used for Cartesian commands.
   # Max joint angular/linear velocity. Rads or Meters per publish period. Only used for joint commands on joint_command_in_topic.
   joint: 0.01
 low_pass_filter_coeff: 8.  # Larger --> trust the filtered data more, trust the measurements less.
 
 ## Properties of outgoing commands
-publish_period: 0.02  # 1/Nominal publish rate [seconds]
+publish_period: 0.008  # 1/Nominal publish rate [seconds]
 
 # What type of topic does your robot driver expect?
 # Currently supported are std_msgs/Float64MultiArray (for ros_control JointGroupVelocityController or JointGroupPositionController)

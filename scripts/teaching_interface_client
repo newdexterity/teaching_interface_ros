@@ -2,7 +2,8 @@
 
 import requests
 import rospy
-from teaching_interface_ros.msg import InterfaceData
+from sensor_msgs.msg import Joy
+from teaching_interface_ros.msg import TeachingCommand
 
 
 class Node(object):
@@ -15,8 +16,9 @@ class Node(object):
         # Parameters
         self.arduino_ip = rospy.get_param('~arduino_ip')
 
-        # Initialise interface data publisher
-        self.data_pub = rospy.Publisher('~teaching_interface_data', InterfaceData, queue_size=1)
+        # Initialise publishers
+        self.joy_pub = rospy.Publisher('~teaching_interface_joy', Joy, queue_size=1)
+        self.tc_pub = rospy.Publisher('~teaching_command', TeachingCommand, queue_size=1)
 
     def run(self):
         while not rospy.is_shutdown():
@@ -24,30 +26,37 @@ class Node(object):
             r = requests.get('http://' + self.arduino_ip)
             data = r.json()
 
-            # Construct message
-            msg = InterfaceData()
-            msg.x_button = not data['x']
-            msg.y_button = not data['y']
-            msg.z_button = not data['z']
-            msg.roll_button = not data['roll']
-            msg.pitch_button = not data['pitch']
-            msg.yaw_button = not data['yaw']
-            msg.waypoint_button = not data['wp']
-            msg.conf_button = not data['conf']
-            if not data['dir']:
-                msg.direction = 1
-            else:
-                msg.direction = -1
-            if not data['ref']:
-                msg.reference = 'base_link'
-            else:
-                msg.reference = 'ee_link'
-            msg.dial = float(data['dial']) / 1023.0
-            msg.fsr_1 = float(data['fsr1']) / 1023.0
-            msg.fsr_2 = float(data['fsr2']) / 1023.0
+            # Process data
+            dial = float(data['dial']) / 1023.0
+            fsr0 = float(data['fsr0']) / 1023.0
+            fsr1 = float(data['fsr1']) / 1023.0
+            buttons = [not data['b'+str(i)] for i in range(8)]
 
-            # Publish message
-            self.data_pub.publish(msg)
+            # Publish Joy message
+            joy_msg = Joy()
+            joy_msg.axes = [dial, fsr0, fsr1]
+            joy_msg.buttons = [data['s0'], data['s1']]
+            joy_msg.buttons.extend(buttons)
+            self.joy_pub.publish(joy_msg)
+
+            # Publish TeachingCommand message
+            tc_msg = TeachingCommand()
+            if not data['s0']:
+                tc_msg.reference = 'base_link'
+            else:
+                tc_msg.reference = 'ee_link'
+            if not data['s1']:
+                tc_msg.twist.linear.x = dial * buttons[2] - dial * buttons[3]
+                tc_msg.twist.linear.y = dial * buttons[4] - dial * buttons[5]
+                tc_msg.twist.linear.z = dial * buttons[6] - dial * buttons[7]
+            else:
+                tc_msg.twist.angular.x = dial * buttons[2] - dial * buttons[3]
+                tc_msg.twist.angular.y = dial * buttons[4] - dial * buttons[5]
+                tc_msg.twist.angular.z = dial * buttons[6] - dial * buttons[7]
+            tc_msg.grasp = fsr1
+            tc_msg.release = buttons[0]
+            tc_msg.waypoint = buttons[1]
+            self.tc_pub.publish(tc_msg)
 
 
 if __name__ == '__main__':
