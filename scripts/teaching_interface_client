@@ -42,9 +42,9 @@ class Node(object):
             # Publish TeachingCommand message
             tc_msg = TeachingCommand()
             if not data['s0']:
-                tc_msg.reference = 'base_link'
+                tc_msg.reference = 'base'
             else:
-                tc_msg.reference = 'ee_link'
+                tc_msg.reference = 'ee'
             if not data['s1']:
                 tc_msg.twist.linear.x = dial * buttons[2] - dial * buttons[3]
                 tc_msg.twist.linear.y = dial * buttons[4] - dial * buttons[5]

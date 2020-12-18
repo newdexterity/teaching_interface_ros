@@ -46,20 +46,18 @@ public:
 private:
   void dataCB(const teaching_interface_ros::TeachingCommand& msg)
   {
-    // Change reference frame if required
-    if (msg.reference != reference_) {
-      reference_ = msg.reference;
-      servo_.setPaused(true);
-      servo_.changeRobotLinkCommandFrame(reference_);
-      ROS_INFO_STREAM_NAMED(LOGNAME, "Reference frame changed to: " << reference_);
-      servo_.setPaused(false);
-      return;
-    }
-
     // Make a Cartesian velocity message
     auto twist_msg = moveit::util::make_shared_from_pool<geometry_msgs::TwistStamped>();
     twist_msg->header.stamp = ros::Time::now();
-    twist_msg->header.frame_id = reference_;
+
+    // Set reference
+    if (msg.reference == "base") {
+      twist_msg->header.frame_id = servo_.getParameters().planning_frame;
+    } else if (msg.reference == "ee") {
+      twist_msg->header.frame_id = servo_.getParameters().ee_frame_name;
+    } else {
+      ROS_WARN_STREAM_NAMED(LOGNAME, "Unrecognized reference frame: " << reference_);
+    }
 
     // Fill in the velocity commands
     twist_msg->twist = msg.twist;
