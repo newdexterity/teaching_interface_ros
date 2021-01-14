@@ -27,8 +27,11 @@
 
   <!-- Launch servo node -->
   <node name="servo_node" pkg="teaching_interface_ros" type="servo_node" output="screen" >
-    <param name="parameter_ns" type="string" value="optional_parameter_namespace" />
-    <rosparam ns="optional_parameter_namespace" command="load" file="$(find teaching_interface_ros)/config/ur10_servo_config.yaml" />
+    <param name="parameter_ns" type="string" value="ur10" />
+    <rosparam ns="ur10" command="load" file="$(find teaching_interface_ros)/config/ur10_servo_config.yaml" />
+    <param name="publish_rate" type="int" value="100" />
+    <param name="acceleration_limit_trans" type="double" value="2.0" />
+    <param name="acceleration_limit_rot" type="double" value="2.0" />
     <remap from="/servo_node/teaching_command" to="/teaching_interface_client/teaching_command" />
   </node>
   
