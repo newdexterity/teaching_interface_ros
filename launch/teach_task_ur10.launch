@@ -3,11 +3,19 @@
 <launch>
 
   <!-- Arguments -->
-  <arg name="arduino_ip" default="192.168.1.3"/>
+  <arg name="arduino_ip" default="192.168.1.3" doc="IP of the Arduino on the local network."/>
+  <arg name="task_path" default="$(find teaching_interface_ros)/tasks/" doc="Path to the taught task configuration." />
+  <arg name="task_name" doc="Task name." />
 
   <!-- Launch teaching interface client -->
   <node name="teaching_interface_client" pkg="teaching_interface_ros" type="teaching_interface_client" output="screen" >
     <param name="arduino_ip" value="$(arg arduino_ip)" />
+  </node>
+
+  <!-- Launch teaching node -->
+  <node name="teach_task" pkg="teaching_interface_ros" type="teach_task" respawn="false" output="screen" >
+    <param name="path" type="str" value="$(arg task_path)$(arg task_name).yaml"/>
+    <rosparam command="load" file="$(find teaching_interface_ros)/config/ur10_servo_config.yaml" />
   </node>
 
   <!-- Launch UR10 Driver -->

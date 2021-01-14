@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+
+import sys
+import time
+import yaml
+import rospy
+import moveit_commander
+from teaching_interface_ros.msg import TeachingCommand
+
+
+class Node(object):
+
+    def __init__(self):
+        # Variables
+        self.waypoints = []
+        self.task = {"waypoints": self.waypoints}
+        self.wp_button = False
+        self.grasp = False
+        self.grasp_current = 0
+
+        # Parameters
+        self.task_save_path = rospy.get_param('~path', {})
+        self.move_group_name = rospy.get_param('~move_group_name')
+
+        # MoveIt
+        moveit_commander.roscpp_initialize(sys.argv)
+        self.move_group = moveit_commander.MoveGroupCommander(self.move_group_name)
+        time.sleep(0.5)
+
+        # Initialise subscribers
+        self.tc_sub = rospy.Subscriber('~teaching_command', TeachingCommand, self.command_callback, queue_size=1)
+
+    def command_callback(self, msg):
+        """
+        Callback for the teaching command. Saves point of release of the waypoint button.
+        Args:
+            msg(TeachingCommand): Input message.
+        """
+        # Store grasp and current
+        if msg.grasp > 0.1:
+            self.grasp = True
+            if msg.grasp > self.grasp_current:
+                self.grasp_current = msg.grasp
+
+        # Reset grasp if release is enabled
+        if msg.release > 0.1:
+            self.grasp = False
+            self.grasp_current = 0
+
+        # Save waypoint on falling edge of the button signal
+        if self.wp_button and not msg.waypoint:
+            wp = {"q": self.move_group.get_current_joint_values(),
+                  "grasp": self.grasp,
+                  "grasp_current": self.grasp_current}
+            self.waypoints.append(wp)
+
+        self.wp_button = msg.waypoint
+
+    @staticmethod
+    def run():
+        rospy.spin()
+
+    def shutdown(self):
+        # Save config
+        with open(self.task_save_path, 'w') as outfile:
+            yaml.dump(self.task, outfile, default_flow_style=False)
+        rospy.loginfo("Saved task file as: {}.".format(self.task_save_path))
+
+
+if __name__ == '__main__':
+    rospy.init_node('teach_task', anonymous=True)
+    n = Node()
+    rospy.on_shutdown(n.shutdown)
+    n.run()
