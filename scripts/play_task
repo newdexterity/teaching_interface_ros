@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+
+import time
+import rospy
+from std_srvs.srv import *
+import moveit_commander
+
+
+class Node(object):
+
+    def __init__(self):
+        # Variables
+        self.proceed = False
+        self.waypoints = []
+
+        # Parameters
+        self.waypoints = rospy.get_param('~waypoints', {})
+        self.move_group_name = rospy.get_param('~move_group_name')
+        self.velocity_scale = rospy.get_param('~velocity_scale')
+        self.acceleration_scale = rospy.get_param('~acceleration_scale')
+
+        # MoveIt
+        moveit_commander.roscpp_initialize(sys.argv)
+        self.move_group = moveit_commander.MoveGroupCommander(self.move_group_name)
+        time.sleep(0.5)
+        self.move_group.set_max_velocity_scaling_factor(self.velocity_scale)
+        self.move_group.set_max_acceleration_scaling_factor(self.acceleration_scale)
+        self.move_group.set_planning_time(3)
+        self.move_group.set_planner_id("RRTConnect")
+        self.move_group.set_num_planning_attempts(3)
+
+        # Advertise services
+        rospy.Service('~proceed', Trigger, self.proceed_handler)
+
+    def wait_for_proceed_trigger(self):
+        rospy.loginfo("Waiting for 'proceed' trigger...")
+        while not self.proceed:
+            time.sleep(0.1)
+        self.proceed = False
+
+    def proceed_handler(self, req):
+        response = TriggerResponse()
+        response.success = True
+        self.proceed = True
+        return response
+
+    def execute_arm_wp(self, wp, wait_for_proceed=True):
+        # Plan motion
+        plan = self.move_group.plan(wp['q'])
+
+        # Check if plan was found
+        if not plan.joint_trajectory.points:
+            rospy.logerr("Motion plan not found.")
+            return False
+
+        # Execute plan
+        if wait_for_proceed:
+            self.wait_for_proceed_trigger()
+        move_success = self.move_group.execute(plan, wait=True)
+
+        return True
+
+    def run(self):
+        # Go through uploaded waypoints
+        for i, wp in enumerate(self.waypoints):
+            # Log waypoint
+            rospy.loginfo("Executing waypoint {}: {}".format(i, wp))
+
+            # TODO: Perform gripper action
+
+            # Move arm
+            success = self.execute_arm_wp(wp, wait_for_proceed=False)
+            if not success:
+                rospy.logerr("Aborting task execution.")
+                return False
+
+    def shutdown(self):
+        self.move_group.stop()
+        self.move_group.clear_pose_targets()
+
+
+if __name__ == '__main__':
+    rospy.init_node('play_task', anonymous=True)
+    n = Node()
+    rospy.on_shutdown(n.shutdown)
+    n.run()

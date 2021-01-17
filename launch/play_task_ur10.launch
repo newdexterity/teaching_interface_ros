@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+
+<launch>
+
+  <!-- Arguments -->
+  <arg name="task_name" doc="Task name." />
+  <arg name="task_path" default="$(find teaching_interface_ros)/tasks/" doc="Path to the taught task configuration." />
+  <arg name="velocity_scale" default="0.03" doc="Velocity scaling factor for trajectory execution." />
+  <arg name="acceleration_scale" default="0.03" doc="Acceleration scaling factor for trajectory execution." />
+
+  <!-- Launch task play node -->
+  <node name="play_task" pkg="teaching_interface_ros" type="play_task" respawn="false" output="screen" required="true" >
+    <rosparam file="$(arg task_path)$(arg task_name).yaml" command="load" />
+    <param name="velocity_scale" type="double" value="$(arg velocity_scale)"/>
+    <param name="acceleration_scale" type="double" value="$(arg acceleration_scale)"/>
+  </node>
+
+  <!-- Launch UR10 Driver -->
+  <include file="$(find ur_modern_driver)/launch/ur10_ros_control.launch" >
+    <arg name="robot_ip" value="192.168.1.32" />
+  </include>
+
+  <!-- Launch UR10 MoveIt -->
+  <include file="$(find ur10limited_moveit_config)/launch/move_group.launch">
+    <arg name="publish_monitored_planning_scene" value="true" />
+  </include>
+  <!-- <include file="$(find ur10limited_moveit_config)/launch/moveit_rviz.launch" >
+    <arg name="rviz_config" value="$(find ur10limited_moveit_config)/launch/moveit.rviz" />
+  </include> -->
+  
+</launch>
