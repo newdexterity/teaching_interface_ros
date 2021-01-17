@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import time
 import yaml
@@ -53,6 +54,7 @@ class Node(object):
                   "grasp": self.grasp,
                   "grasp_current": self.grasp_current}
             self.waypoints.append(wp)
+            rospy.loginfo("Added waypoint: {}".format(wp))
 
         self.wp_button = msg.waypoint
 
@@ -61,6 +63,10 @@ class Node(object):
         rospy.spin()
 
     def shutdown(self):
+        # Make directory
+        if not os.path.exists(os.path.dirname(self.task_save_path)):
+            os.makedirs(os.path.dirname(self.task_save_path))
+
         # Save config
         with open(self.task_save_path, 'w') as outfile:
             yaml.dump(self.task, outfile, default_flow_style=False)

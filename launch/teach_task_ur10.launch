@@ -16,6 +16,7 @@
   <node name="teach_task" pkg="teaching_interface_ros" type="teach_task" respawn="false" output="screen" >
     <param name="path" type="str" value="$(arg task_path)$(arg task_name).yaml"/>
     <rosparam command="load" file="$(find teaching_interface_ros)/config/ur10_servo_config.yaml" />
+    <remap from="/teach_task/teaching_command" to="/teaching_interface_client/teaching_command" />
   </node>
 
   <!-- Launch UR10 Driver -->
