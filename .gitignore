@@ -13,4 +13,4 @@ __pycache__/
 *.so
 
 # Ignore task files
-teaching_interface_ros/tasks/*
+tasks/*
