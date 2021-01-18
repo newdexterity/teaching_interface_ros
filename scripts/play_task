@@ -2,8 +2,10 @@
 
 import time
 import rospy
-from std_srvs.srv import *
+import actionlib
 import moveit_commander
+from std_srvs.srv import *
+from control_msgs.msg import GripperCommandAction, GripperCommandGoal, GripperCommand
 
 
 class Node(object):
@@ -28,6 +30,10 @@ class Node(object):
         self.move_group.set_planning_time(3)
         self.move_group.set_planner_id("RRTConnect")
         self.move_group.set_num_planning_attempts(3)
+
+        # Create the gripper action client
+        self.client = actionlib.SimpleActionClient('parallel_gripper', GripperCommandAction)
+        self.client.wait_for_server()
 
         # Advertise services
         rospy.Service('~proceed', Trigger, self.proceed_handler)
@@ -66,7 +72,11 @@ class Node(object):
             # Log waypoint
             rospy.loginfo("Executing waypoint {}: {}".format(i, wp))
 
-            # TODO: Perform gripper action
+            # Perform gripper action
+            command = GripperCommand(position=wp['gripper']['position'], max_effort=wp['gripper']['max_effort'])
+            goal = GripperCommandGoal(command=command)
+            self.client.send_goal(goal)
+            self.client.wait_for_result()
 
             # Move arm
             success = self.execute_arm_wp(wp, wait_for_proceed=False)

@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+
+<launch>
+
+  <!-- Launch gripper node -->
+  <node name="parallel_gripper" pkg="ndx_manipulation" type="parallel_gripper_std_node" output="screen">
+    <rosparam command="load" file="$(find ndx_manipulation)/config/parallel_gripper_std_node.yaml" />
+    <remap from="/joint_states" to="/parallel_gripper/joint_states" />
+  </node>
+
+</launch>

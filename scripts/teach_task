@@ -22,6 +22,7 @@ class Node(object):
         # Parameters
         self.task_save_path = rospy.get_param('~path', {})
         self.move_group_name = rospy.get_param('~move_group_name')
+        self.task['move_group_name'] = self.move_group_name
 
         # MoveIt
         moveit_commander.roscpp_initialize(sys.argv)
