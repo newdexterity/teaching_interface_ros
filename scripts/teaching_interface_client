@@ -11,10 +11,13 @@ class Node(object):
     def __init__(self):
 
         # Variables
-        self.var = None
+        self.gripper_grasp = False
+        self.gripper_effort_scale = 0.0
 
         # Parameters
         self.arduino_ip = rospy.get_param('~arduino_ip')
+        self.gripper_aperture_limit = rospy.get_param('~gripper_aperture_limit')
+        self.gripper_effort_limit = rospy.get_param('~gripper_effort_limit')
 
         # Initialise publishers
         self.joy_pub = rospy.Publisher('~teaching_interface_joy', Joy, queue_size=1)
@@ -39,12 +42,14 @@ class Node(object):
             joy_msg.buttons.extend(buttons)
             self.joy_pub.publish(joy_msg)
 
-            # Publish TeachingCommand message
+            # Construct TeachingCommand message
             tc_msg = TeachingCommand()
+            # Reference
             if not data['s0']:
                 tc_msg.reference = 'base'
             else:
                 tc_msg.reference = 'ee'
+            # Twist
             if not data['s1']:
                 tc_msg.twist.linear.x = dial * buttons[2] - dial * buttons[3]
                 tc_msg.twist.linear.y = dial * buttons[4] - dial * buttons[5]
@@ -53,9 +58,23 @@ class Node(object):
                 tc_msg.twist.angular.x = dial * buttons[2] - dial * buttons[3]
                 tc_msg.twist.angular.y = dial * buttons[4] - dial * buttons[5]
                 tc_msg.twist.angular.z = dial * buttons[6] - dial * buttons[7]
-            tc_msg.grasp = fsr1
-            tc_msg.release = buttons[0]
+            # Gripper command
+            if buttons[0]:
+                self.gripper_grasp = False
+                self.gripper_effort_scale = 0.0
+            elif fsr1 > 0.1:
+                self.gripper_grasp = True
+                if fsr1 > self.gripper_effort_scale:
+                    self.gripper_effort_scale = fsr1
+            if self.gripper_grasp:
+                tc_msg.gripper_command.position = 0.0
+                tc_msg.gripper_command.max_effort = self.gripper_effort_scale * self.gripper_effort_limit
+            else:
+                tc_msg.gripper_command.position = self.gripper_aperture_limit
+                tc_msg.gripper_command.max_effort = self.gripper_effort_limit
+            # Waypoint
             tc_msg.waypoint = buttons[1]
+            # Publish message
             self.tc_pub.publish(tc_msg)
 
 

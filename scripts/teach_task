@@ -37,22 +37,12 @@ class Node(object):
         Args:
             msg(TeachingCommand): Input message.
         """
-        # Store grasp and current
-        if msg.grasp > 0.1:
-            self.grasp = True
-            if msg.grasp > self.grasp_current:
-                self.grasp_current = msg.grasp
-
-        # Reset grasp if release is enabled
-        if msg.release > 0.1:
-            self.grasp = False
-            self.grasp_current = 0
-
         # Save waypoint on falling edge of the button signal
         if self.wp_button and not msg.waypoint:
             wp = {"q": self.move_group.get_current_joint_values(),
-                  "grasp": self.grasp,
-                  "grasp_current": self.grasp_current}
+                  "gripper": {"position": msg.gripper_command.position,
+                              "max_effort": msg.gripper_command.max_effort}
+                  }
             self.waypoints.append(wp)
             rospy.loginfo("Added waypoint: {}".format(wp))
 

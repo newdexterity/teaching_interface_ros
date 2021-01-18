@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+import time
+import rospy
+import actionlib
+from control_msgs.msg import GripperCommandAction, GripperCommandGoal, GripperCommand
+from teaching_interface_ros.msg import TeachingCommand
+
+
+class Node(object):
+
+    def __init__(self):
+        # Variables
+        self.position = 1.0
+        self.effort = 1.0
+
+        # Create the gripper action client
+        self.client = actionlib.SimpleActionClient('parallel_gripper', GripperCommandAction)
+
+        # Wait until the action server has started up and started listening for goals
+        self.client.wait_for_server()
+
+        # Initialise subscribers
+        self.tc_sub = rospy.Subscriber('~teaching_command', TeachingCommand, self.command_callback, queue_size=1)
+
+    def command_callback(self, msg):
+        """
+        Callback for the teaching command. Saves point of release of the waypoint button.
+        Args:
+            msg(TeachingCommand): Input message.
+        """
+        if msg.gripper_command.position != self.position or msg.gripper_command.max_effort != self.effort:
+            self.position = msg.gripper_command.position
+            self.effort = msg.gripper_command.max_effort
+            command = GripperCommand(position=self.position, max_effort=self.effort)
+            goal = GripperCommandGoal(command=command)
+            self.client.send_goal(goal)
+
+    @staticmethod
+    def run():
+        rospy.spin()
+
+
+if __name__ == '__main__':
+    rospy.init_node('gripper_client', anonymous=True)
+    n = Node()
+    n.run()
