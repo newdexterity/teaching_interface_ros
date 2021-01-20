@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+
+import rospy
+from sensor_msgs.msg import Joy
+from teaching_interface_ros.msg import TeachingCommand
+
+
+class Node(object):
+
+    def __init__(self):
+
+        # Variables
+        self.reference = 'base'
+        self.command_type = 'trans'
+        self.gripper_grasp = False
+        self.gripper_max_effort = 1.0
+
+        # Parameters
+        self.gripper_aperture_limit = rospy.get_param('~gripper_aperture_limit')
+        self.gripper_effort_limit = rospy.get_param('~gripper_effort_limit')
+
+        # Initialise publishers
+        self.joy_pub = rospy.Subscriber('ds4/joy', Joy, self.joy_callback, queue_size=1)
+        self.tc_pub = rospy.Publisher('~teaching_command', TeachingCommand, queue_size=1)
+
+    def joy_callback(self, msg):
+        """
+        Callback for the Joy messages received from the 3D mouse.
+        Args:
+            msg(Joy): Joy message.
+        """
+        # Process reference input
+        if msg.buttons[17]:
+            self.reference = 'base'
+        elif msg.buttons[15]:
+            self.reference = 'ee'
+        # Process command type input
+        if msg.buttons[3]:
+            self.command_type = 'trans'
+        elif msg.buttons[2]:
+            self.command_type = 'rot'
+        # Process grasp input
+        if msg.buttons[5] and msg.axes[4] > 0.1:
+            if self.gripper_grasp:              # Reset effort if previously grasping
+                self.gripper_max_effort = 0.0
+            self.gripper_grasp = False
+            max_effort = msg.axes[4] * self.gripper_effort_limit
+            if max_effort > self.gripper_max_effort:
+                self.gripper_max_effort = max_effort
+        elif msg.buttons[7] and msg.axes[5] > 0.1:
+            if not self.gripper_grasp:          # Reset effort if previously releasing
+                self.gripper_max_effort = 0.0
+            self.gripper_grasp = True
+            max_effort = msg.axes[5] * self.gripper_effort_limit
+            if max_effort > self.gripper_max_effort:
+                self.gripper_max_effort = max_effort
+
+        # Construct TeachingCommand message
+        tc_msg = TeachingCommand()
+        # Reference
+        tc_msg.reference = self.reference
+        # Twist
+        if self.command_type == 'trans':
+            tc_msg.twist.linear.x = msg.axes[0]
+            tc_msg.twist.linear.y = msg.axes[1]
+            tc_msg.twist.linear.z = msg.axes[3]
+        elif self.command_type == 'rot':
+            tc_msg.twist.angular.x = msg.axes[0]
+            tc_msg.twist.angular.y = msg.axes[1]
+            tc_msg.twist.angular.z = msg.axes[3]
+        # Gripper command
+        if self.gripper_grasp:
+            tc_msg.gripper_command.position = 0.0
+        else:
+            tc_msg.gripper_command.position = self.gripper_aperture_limit
+        tc_msg.gripper_command.max_effort = self.gripper_max_effort
+        # Waypoint
+        tc_msg.waypoint = msg.buttons[1]
+        # Publish message
+        self.tc_pub.publish(tc_msg)
+
+    @staticmethod
+    def run():
+        rospy.spin()
+
+
+if __name__ == '__main__':
+    rospy.init_node('ds4_joy2tc', anonymous=False)
+    n = Node()
+    n.run()
