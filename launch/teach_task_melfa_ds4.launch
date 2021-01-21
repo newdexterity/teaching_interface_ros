@@ -3,8 +3,8 @@
 <launch>
 
   <!-- Arguments -->
-  <arg name="task_path" default="$(find teaching_interface_ros)/tasks/ur10/" doc="Path to the taught task configuration." />
   <arg name="task_name" doc="Task name." />
+  <arg name="task_path" default="$(find teaching_interface_ros)/tasks/melfa/" doc="Path to the taught task configuration." />
   <arg name="gripper_aperture_limit" default="0.14" doc="Maximum allowed aperture of the gripper."/>
   <arg name="gripper_effort_limit" default="100" doc="Maximum allowed effort of the gripper."/>
 
@@ -32,28 +32,44 @@
     <remap from="/teach_task/teaching_command" to="/ds4_joy2tc/teaching_command" />
   </node>
 
-  <!-- Launch UR10 Driver -->
-  <include file="$(find ur_modern_driver)/launch/ur10_ros_control.launch" >
-    <arg name="robot_ip" value="192.168.1.32" />
-    <arg name="controllers" default="joint_state_controller force_torque_sensor_controller joint_group_vel_controller"/>
-    <arg name="stopped_controllers" default="pos_based_pos_traj_controller vel_based_pos_traj_controller"/>
-  </include>
+  <!-- Load robot model -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find melfa_description)/urdf/rv4fl.urdf.xacro" />
 
-  <!-- Launch UR10 MoveIt -->
-  <include file="$(find ur10limited_moveit_config)/launch/move_group.launch">
+  <!-- Launch Melfa Driver -->
+  <node name="melfa_driver" pkg="melfa_driver" type="melfa_driver_node" output="screen">
+    <param name="robot_ip" value="192.168.1.101"/>
+    <param name="realtime" value="false"/>
+    <param name="period" value="0.0071"/>
+  </node>
+
+  <!-- Load joint controller configurations -->
+  <rosparam file="$(find teaching_interface_ros)/config/melfa_controllers.yaml" command="load"/>
+
+  <!-- Load controllers -->
+  <node name="ros_control_controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+    output="screen" args="joint_state_controller joint_group_pos_controller" />
+  <node name="ros_control_controller_manager" pkg="controller_manager" type="controller_manager" respawn="false"
+    output="screen" args="load joint_trajectory_controller" />
+
+  <!-- Robot state publisher (convert joint states to /tf) -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <!-- Launch melfa MoveIt -->
+  <include file="$(find rv4fl_moveit_config)/launch/move_group.launch">
     <arg name="publish_monitored_planning_scene" value="true" />
+    <arg name="info" value="true"/>
   </include>
-  <!-- <include file="$(find ur10limited_moveit_config)/launch/moveit_rviz.launch" >
-    <arg name="rviz_config" value="$(find ur10limited_moveit_config)/launch/moveit.rviz" />
+  <!-- <include file="$(find rv4fl_moveit_config)/launch/moveit_rviz.launch">
+    <arg name="config" value="true"/>
   </include> -->
 
   <!-- Launch servo node -->
   <node name="servo_node" pkg="teaching_interface_ros" type="servo_node" output="screen" >
     <param name="publish_rate" type="int" value="100" />
-    <param name="acceleration_limit_trans" type="double" value="2.0" />
-    <param name="acceleration_limit_rot" type="double" value="2.0" />
-    <param name="parameter_ns" type="string" value="ur10_servo" />
-    <rosparam ns="ur10_servo" command="load" file="$(find teaching_interface_ros)/config/ur10_servo_config.yaml" />
+    <param name="acceleration_limit_trans" type="double" value="4.0" />
+    <param name="acceleration_limit_rot" type="double" value="4.0" />
+    <param name="parameter_ns" type="string" value="melfa_servo" />
+    <rosparam ns="melfa_servo" command="load" file="$(find teaching_interface_ros)/config/melfa_servo_config.yaml" />
     <remap from="/servo_node/teaching_command" to="/ds4_joy2tc/teaching_command" />
   </node>
   

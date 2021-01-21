@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+
+<launch>
+
+  <!-- Arguments -->
+  <arg name="task_name" doc="Task name." />
+  <arg name="task_path" default="$(find teaching_interface_ros)/tasks/melfa/" doc="Path to the taught task configuration." />
+  <arg name="velocity_scale" default="0.01" doc="Velocity scaling factor for trajectory execution." />
+  <arg name="acceleration_scale" default="0.01" doc="Acceleration scaling factor for trajectory execution." />
+
+  <!-- Launch task play node -->
+  <node name="play_task" pkg="teaching_interface_ros" type="play_task" respawn="false" output="screen" required="true" >
+    <rosparam file="$(arg task_path)$(arg task_name).yaml" command="load" />
+    <param name="velocity_scale" type="double" value="$(arg velocity_scale)"/>
+    <param name="acceleration_scale" type="double" value="$(arg acceleration_scale)"/>
+  </node>
+
+  <!-- Load robot model -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find melfa_description)/urdf/rv4fl.urdf.xacro" />
+
+  <!-- Launch Melfa Driver -->
+  <node name="melfa_driver" pkg="melfa_driver" type="melfa_driver_node" output="screen">
+    <param name="robot_ip" value="192.168.1.101"/>
+    <param name="realtime" value="false"/>
+    <param name="period" value="0.0071"/>
+  </node>
+
+  <!-- Load joint controller configurations -->
+  <rosparam file="$(find teaching_interface_ros)/config/melfa_controllers.yaml" command="load"/>
+
+  <!-- Load joint_trajectory_controller -->
+  <node name="controller_spawner" pkg="controller_manager"
+  type="spawner"  respawn="false"
+  args="joint_state_controller
+        joint_trajectory_controller"/>
+
+  <!-- Robot state publisher (convert joint states to /tf) -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <!-- Launch melfa MoveIt -->
+  <include file="$(find rv4fl_moveit_config)/launch/move_group.launch">
+    <arg name="allow_trajectory_execution" value="true"/>
+    <arg name="fake_execution" value="false"/>
+    <arg name="info" value="true"/>
+  </include>
+  <!-- <include file="$(find rv4fl_moveit_config)/launch/moveit_rviz.launch">
+    <arg name="config" value="true"/>
+  </include> -->
+  
+</launch>

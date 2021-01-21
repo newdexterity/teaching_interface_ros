@@ -4,7 +4,7 @@
 
   <!-- Arguments -->
   <arg name="task_name" doc="Task name." />
-  <arg name="task_path" default="$(find teaching_interface_ros)/tasks/" doc="Path to the taught task configuration." />
+  <arg name="task_path" default="$(find teaching_interface_ros)/tasks/ur10/" doc="Path to the taught task configuration." />
   <arg name="velocity_scale" default="0.03" doc="Velocity scaling factor for trajectory execution." />
   <arg name="acceleration_scale" default="0.03" doc="Acceleration scaling factor for trajectory execution." />
 
