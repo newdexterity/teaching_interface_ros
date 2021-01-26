@@ -1,0 +1,141 @@
+#!/usr/bin/env python
+
+import pygame
+import rospy
+from teaching_interface_ros.msg import TeachingCommand
+
+
+CONTROLS = ["Keyboard control:",
+            "Translation XYZ: q/a, w/s, e/d",
+            "Rotation XYZ: Q/A, W/S, E/D",
+            "Base frame: UP, EE frame: DOWN",
+            "Speed: LEFT/RIGHT",
+            "Grasp/release: Space",
+            "Waypoint: Enter",
+            "Exit: Esc"]
+
+
+class Node(object):
+
+    def __init__(self):
+
+        # Variables
+        self.reference = 'base'
+        self.speed = 0.2
+        self.grasp_button = False
+        self.gripper_grasp = False
+
+        # Parameters
+        self.rate = 20
+        self.speed_increment = 4.0 / self.rate
+        self.gripper_aperture_limit = rospy.get_param('~gripper_aperture_limit', 0.14)
+        self.gripper_effort_limit = rospy.get_param('~gripper_effort_limit', 100)
+
+        # Initialise publisher
+        self.tc_pub = rospy.Publisher('~teaching_command', TeachingCommand, queue_size=1)
+
+    def update_speed(self, increment):
+        self.speed = self.speed + increment
+        if self.speed > 1.0:
+            self.speed = 1.0
+        if self.speed < 0.0:
+            self.speed = 0.0
+
+    @staticmethod
+    def init_pygame():
+        pygame.init()
+        screen = pygame.display.set_mode([512, 512])
+        screen.fill((255, 255, 255))
+        font = pygame.font.SysFont('arial', 30)
+        for i, line in enumerate(CONTROLS):
+            text_surface = font.render(line, False, (0, 0, 0))
+            screen.blit(text_surface, (32, 32*(i+1)))
+        pygame.display.flip()
+
+    def run(self):
+        self.init_pygame()
+
+        rate = rospy.Rate(self.rate)
+
+        running = True
+        while not rospy.is_shutdown() and running:
+            # Pygame events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            # Get key(s)
+            keys = pygame.key.get_pressed()
+            shift = pygame.key.get_mods() & pygame.KMOD_SHIFT
+
+            # Escape
+            if keys[pygame.K_ESCAPE]:
+                break
+
+            # Construct TeachingCommand message
+            tc_msg = TeachingCommand()
+
+            # Reference
+            if keys[pygame.K_UP]:
+                self.reference = 'ee'
+            elif keys[pygame.K_DOWN]:
+                self.reference = 'base'
+
+            # Speed
+            if keys[pygame.K_LEFT]:
+                self.update_speed(-self.speed_increment / self.rate)
+            elif keys[pygame.K_RIGHT]:
+                self.update_speed(self.speed_increment / self.rate)
+
+            # Twist
+            if not shift:
+                if keys[pygame.K_q]:
+                    tc_msg.twist.linear.x = self.speed
+                if keys[pygame.K_a]:
+                    tc_msg.twist.linear.x = -self.speed
+                if keys[pygame.K_w]:
+                    tc_msg.twist.linear.y = self.speed
+                if keys[pygame.K_s]:
+                    tc_msg.twist.linear.y = -self.speed
+                if keys[pygame.K_e]:
+                    tc_msg.twist.linear.z = self.speed
+                if keys[pygame.K_d]:
+                    tc_msg.twist.linear.z = -self.speed
+            else:
+                if keys[pygame.K_q]:
+                    tc_msg.twist.angular.x = self.speed
+                if keys[pygame.K_a]:
+                    tc_msg.twist.angular.x = -self.speed
+                if keys[pygame.K_w]:
+                    tc_msg.twist.angular.y = self.speed
+                if keys[pygame.K_s]:
+                    tc_msg.twist.angular.y = -self.speed
+                if keys[pygame.K_e]:
+                    tc_msg.twist.angular.z = self.speed
+                if keys[pygame.K_d]:
+                    tc_msg.twist.angular.z = -self.speed
+
+            # Gripper
+            if self.grasp_button and not keys[pygame.K_SPACE]:
+                self.gripper_grasp = not self.gripper_grasp
+            if self.gripper_grasp:
+                tc_msg.gripper_command.position = 0.0
+            else:
+                tc_msg.gripper_command.position = self.gripper_aperture_limit
+            tc_msg.gripper_command.max_effort = self.gripper_effort_limit
+            self.grasp_button = keys[pygame.K_SPACE]
+
+            # Waypoint
+            tc_msg.waypoint = keys[pygame.K_RETURN]
+
+            # Publish message
+            tc_msg.reference = self.reference
+            self.tc_pub.publish(tc_msg)
+
+            rate.sleep()
+
+
+if __name__ == '__main__':
+    rospy.init_node('keyboad_tc', anonymous=False)
+    n = Node()
+    n.run()
