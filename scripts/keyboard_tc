@@ -21,7 +21,7 @@ class Node(object):
 
         # Variables
         self.reference = 'base'
-        self.speed = 0.2
+        self.speed = 0.5
         self.grasp_button = False
         self.gripper_grasp = False
 

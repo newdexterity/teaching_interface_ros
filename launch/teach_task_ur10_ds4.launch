@@ -5,8 +5,8 @@
   <!-- Arguments -->
   <arg name="task_path" default="$(find teaching_interface_ros)/tasks/ur10/" doc="Path to the taught task configuration." />
   <arg name="task_name" doc="Task name." />
-  <arg name="gripper_aperture_limit" default="0.14" doc="Maximum allowed aperture of the gripper."/>
-  <arg name="gripper_effort_limit" default="100" doc="Maximum allowed effort of the gripper."/>
+  <arg name="gripper_aperture_limit" default="0.06" doc="Maximum allowed aperture of the gripper."/>
+  <arg name="gripper_effort_limit" default="80" doc="Maximum allowed effort of the gripper."/>
 
   <!-- Launch ds4 driver -->
   <include file="$(find ds4_driver)/launch/ds4_driver.launch">
