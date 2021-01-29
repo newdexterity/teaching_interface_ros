@@ -61,11 +61,11 @@ class Node(object):
         tc_msg.reference = self.reference
         # Twist
         if self.command_type == 'trans':
-            tc_msg.twist.linear.x = msg.axes[0]
+            tc_msg.twist.linear.x = -msg.axes[0]
             tc_msg.twist.linear.y = msg.axes[1]
             tc_msg.twist.linear.z = msg.axes[3]
         elif self.command_type == 'rot':
-            tc_msg.twist.angular.x = msg.axes[0]
+            tc_msg.twist.angular.x = -msg.axes[0]
             tc_msg.twist.angular.y = msg.axes[1]
             tc_msg.twist.angular.z = msg.axes[3]
         # Gripper command
